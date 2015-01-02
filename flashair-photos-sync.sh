@@ -175,7 +175,8 @@ restore_wifi(){
     ####################
     ## Wi-Fi is restored to original setting
 
-    cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk '{print $NF}' )
+    cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk 'match($0, /: .*/) { print substr($0, RSTART+2, RLENGTH-2) }' )
+    #cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk '{print $NF}' )
     
     if [ ! "$cur_wifi_ssid" == "$org_wifi_ssid" ]; then
     
@@ -191,7 +192,8 @@ restore_wifi(){
             
             echo ${org_wifi_back_cmd[1]} | xargs ${org_wifi_back_cmd[0]}
             
-            cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk '{print $NF}' )
+            cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk 'match($0, /: .*/) { print substr($0, RSTART+2, RLENGTH-2) }' )
+            #cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk '{print $NF}' )
             
             if [ "$cur_wifi_ssid" == "$org_wifi_ssid" ]; then
                 echo "Success"  >> "$SUMMARY_LOG"
@@ -806,7 +808,8 @@ if [ -n "$download_mode" ]; then
         echo "    Now not associated any Wi-Fi Network "     >> "$SUMMARY_LOG"
         
     else
-        org_wifi_ssid=$( echo $org_wifi_info | awk '{print $NF}' )
+        org_wifi_ssid=$( echo $org_wifi_info | awk 'match($0, /: .*/) { print substr($0, RSTART+2, RLENGTH-2) }' )
+        #org_wifi_ssid=$( echo $org_wifi_info | awk '{print $NF}' )
     
         #declare -p org_wifi_ssid
         
@@ -815,7 +818,7 @@ if [ -n "$download_mode" ]; then
 
         ver_largerequal "$MACOSX_VER" "10.9"
         if [ $? -eq 1 ]; then
-            wifi_pwd_fetch_opt="find-generic-password -g -s ${WLAN_SVCE_NAME} -a ${org_wifi_ssid}"
+            wifi_pwd_fetch_opt="find-generic-password -g -s ${WLAN_SVCE_NAME} -a '${org_wifi_ssid}'"
         else
             wifi_pwd_fetch_opt="find-generic-password -g -s ${WLAN_SVCE_PREFIX}${org_wifi_ssid}"
         fi
@@ -857,7 +860,7 @@ if [ -n "$download_mode" ]; then
 
     ver_largerequal "$MACOSX_VER" "10.9"
     if [ $? -eq 1 ]; then
-        wifi_pwd_fetch_opt="find-generic-password -g -s ${WLAN_SVCE_NAME} -a ${FLAIR_SSID}"
+        wifi_pwd_fetch_opt="find-generic-password -g -s ${WLAN_SVCE_NAME} -a '${FLAIR_SSID}'"
     else
         wifi_pwd_fetch_opt="find-generic-password -g -s ${WLAN_SVCE_PREFIX}${FLAIR_SSID}"
     fi
@@ -883,7 +886,7 @@ if [ -n "$download_mode" ]; then
     flair_wifi_pw=$( echo $keychain_item | grep ^password: | awk -F": " '{print $2}' | sed 's/"//g' )
 
     flair_wifi_change_cmd=("networksetup")
-    flair_wifi_change_cmd+=("-setairportnetwork ${NW_DEV} ${FLAIR_SSID} \"${flair_wifi_pw}\"")
+    flair_wifi_change_cmd+=("-setairportnetwork ${NW_DEV} \"${FLAIR_SSID}\" \"${flair_wifi_pw}\"")
 fi
 
 
@@ -1014,7 +1017,8 @@ if [ -n "$download_mode" ]; then
     wifi_swt_cnt=$WIFI_SWT_MAX_CNT
     while : ; do
         echo ${flair_wifi_change_cmd[1]} | xargs ${flair_wifi_change_cmd[0]} > ${SWT_WIFI} 2>&1
-        cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk '{print $NF}' )
+        cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk 'match($0, /: .*/) { print substr($0, RSTART+2, RLENGTH-2) }' )
+        #cur_wifi_ssid=$( networksetup -getairportnetwork ${NW_DEV} | awk '{print $NF}' )
 
         if [ "$cur_wifi_ssid" == "$FLAIR_SSID" ]; then
             break
@@ -1119,7 +1123,7 @@ if [ -n "$download_mode" ]; then
 
     echo -n "  FlashAir Photo Listing ... " >&2
     cat "$photo_index" | while read line; do
-        img=$( echo $line | grep $PHOTO_KEYWORD | awk -F, '{print $2}' )
+    img=$( echo $line | grep $PHOTO_KEYWORD | awk 'match($0, /"fname":"[0-9A-Za-z_.]*"/) {print substr($0, RSTART+9, RLENGTH-10)}' )
         if [ -n "$img" ]; then
             echo "$img" >> "$FLAIR_LIST_RAW"
         fi
